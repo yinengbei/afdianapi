@@ -12,6 +12,11 @@ for (const envVar of requiredEnvVars) {
   }
 }
 
+// 验证数据库配置（生产环境必须设置密码）
+if (process.env.NODE_ENV === 'production' && !process.env.DB_PASSWORD) {
+  console.warn('警告: 生产环境未设置数据库密码，存在安全风险');
+}
+
 const config = {
   // 爱发电API配置
   afdian: {
@@ -36,6 +41,10 @@ const config = {
     waitForConnections: true,
     connectionLimit: 10,
     queueLimit: 0,
+    // 连接超时设置
+    connectTimeout: 10000, // 10秒
+    // 启用SSL（如果数据库支持）
+    ssl: process.env.DB_SSL === 'true' ? {} : false,
   },
 
   // 定时任务配置

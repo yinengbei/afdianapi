@@ -156,17 +156,21 @@ class OrderModel {
   async findMany(options = {}) {
     const db = await this._getDb();
     const { page = 1, perPage = 50, outTradeNo } = options;
-    // 确保是整数类型
-    const pageNum = parseInt(page, 10) || 1;
-    const perPageNum = parseInt(perPage, 10) || 50;
-    const offset = (pageNum - 1) * perPageNum;
+    // 确保是整数类型且为正数
+    const pageNum = Math.max(1, parseInt(page, 10) || 1);
+    const perPageNum = Math.max(1, Math.min(1000, parseInt(perPage, 10) || 50));
+    const offset = Math.max(0, (pageNum - 1) * perPageNum);
 
     let query = 'SELECT * FROM orders';
     const params = [];
 
     if (outTradeNo) {
-      const tradeNos = outTradeNo.split(',').map(no => no.trim()).filter(Boolean);
-      if (tradeNos.length > 0) {
+      // 验证订单号格式（只允许字母、数字、下划线、连字符，长度限制）
+      const tradeNos = outTradeNo.split(',')
+        .map(no => no.trim())
+        .filter(no => /^[a-zA-Z0-9_-]{1,100}$/.test(no));
+      
+      if (tradeNos.length > 0 && tradeNos.length <= 100) { // 限制最多100个订单号
         const placeholders = tradeNos.map(() => '?').join(',');
         query += ` WHERE out_trade_no IN (${placeholders})`;
         params.push(...tradeNos);
@@ -191,8 +195,12 @@ class OrderModel {
     let countQuery = 'SELECT COUNT(*) as total FROM orders';
     const countParams = [];
     if (outTradeNo) {
-      const tradeNos = outTradeNo.split(',').map(no => no.trim()).filter(Boolean);
-      if (tradeNos.length > 0) {
+      // 使用相同的验证逻辑
+      const tradeNos = outTradeNo.split(',')
+        .map(no => no.trim())
+        .filter(no => /^[a-zA-Z0-9_-]{1,100}$/.test(no));
+      
+      if (tradeNos.length > 0 && tradeNos.length <= 100) {
         const placeholders = tradeNos.map(() => '?').join(',');
         countQuery += ` WHERE out_trade_no IN (${placeholders})`;
         countParams.push(...tradeNos);

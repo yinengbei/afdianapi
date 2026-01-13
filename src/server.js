@@ -1,6 +1,6 @@
 import Fastify from 'fastify';
 import config from './config/index.js';
-import { initDatabase, closeDatabase } from './db/index.js';
+import { initDatabase, closeDatabase, getDatabase } from './db/index.js';
 import { startSyncTask, stopSyncTask } from './cron/syncOrders.js';
 
 // 导入路由
@@ -23,6 +23,26 @@ const fastify = Fastify({
 
 // 注册路由
 fastify.register(sponsorRoutes);
+
+// 健康检查端点
+fastify.get('/health', async (request, reply) => {
+  try {
+    // 检查数据库连接
+    const db = await getDatabase();
+    await db.execute('SELECT 1');
+    
+    return {
+      status: 'ok',
+      timestamp: Math.floor(Date.now() / 1000),
+    };
+  } catch (error) {
+    reply.code(503);
+    return {
+      status: 'error',
+      message: '数据库连接失败',
+    };
+  }
+});
 
 // 启动服务器
 async function start() {

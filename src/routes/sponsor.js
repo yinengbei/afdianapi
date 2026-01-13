@@ -25,9 +25,37 @@ async function sponsorRoutes(fastify, options) {
     try {
       const { page, per_page } = request.query;
 
+      // 输入验证和边界检查
+      let pageNum = 1;
+      let perPageNum = 20;
+
+      if (page !== undefined) {
+        pageNum = parseInt(page, 10);
+        if (isNaN(pageNum) || pageNum < 1) {
+          reply.code(400);
+          return {
+            ec: 400,
+            em: '页码必须是大于0的整数',
+            data: null,
+          };
+        }
+      }
+
+      if (per_page !== undefined) {
+        perPageNum = parseInt(per_page, 10);
+        if (isNaN(perPageNum) || perPageNum < 1 || perPageNum > 100) {
+          reply.code(400);
+          return {
+            ec: 400,
+            em: '每页数量必须是1-100之间的整数',
+            data: null,
+          };
+        }
+      }
+
       const options = {
-        page: page ? parseInt(page, 10) : 1,
-        perPage: per_page ? Math.min(parseInt(per_page, 10), 100) : 20,
+        page: pageNum,
+        perPage: perPageNum,
       };
 
       const result = await sponsorModel.findMany(options);
@@ -52,9 +80,10 @@ async function sponsorRoutes(fastify, options) {
     } catch (error) {
       fastify.log.error(error);
       reply.code(500);
+      // 不直接返回错误详情给客户端，避免信息泄露
       return {
         ec: 500,
-        em: error.message || '服务器内部错误',
+        em: '服务器内部错误',
         data: null,
       };
     }

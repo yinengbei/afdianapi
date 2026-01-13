@@ -74,17 +74,24 @@ class SponsorModel {
   async findMany(options = {}) {
     const db = await this._getDb();
     const { page = 1, perPage = 20, userId } = options;
-    // 确保是整数类型
-    const pageNum = parseInt(page, 10) || 1;
-    const perPageNum = parseInt(perPage, 10) || 20;
-    const offset = (pageNum - 1) * perPageNum;
+    // 确保是整数类型且为正数
+    const pageNum = Math.max(1, parseInt(page, 10) || 1);
+    const perPageNum = Math.max(1, Math.min(100, parseInt(perPage, 10) || 20));
+    const offset = Math.max(0, (pageNum - 1) * perPageNum);
 
     let query = 'SELECT * FROM sponsors';
     const params = [];
 
     if (userId) {
-      const userIds = userId.split(',').map(id => id.trim()).filter(Boolean);
-      if (userIds.length > 0) {
+      // 验证和清理用户ID（防止SQL注入，虽然使用了参数化查询，但还是要验证格式）
+      const userIds = userId.split(',')
+        .map(id => id.trim())
+        .filter(id => {
+          // 基本格式验证：只允许字母、数字、下划线、连字符，长度限制
+          return /^[a-zA-Z0-9_-]{1,100}$/.test(id);
+        });
+      
+      if (userIds.length > 0 && userIds.length <= 100) { // 限制最多100个ID
         const placeholders = userIds.map(() => '?').join(',');
         query += ` WHERE user_id IN (${placeholders})`;
         params.push(...userIds);
@@ -101,8 +108,12 @@ class SponsorModel {
     let countQuery = 'SELECT COUNT(*) as total FROM sponsors';
     const countParams = [];
     if (userId) {
-      const userIds = userId.split(',').map(id => id.trim()).filter(Boolean);
-      if (userIds.length > 0) {
+      // 使用相同的验证逻辑
+      const userIds = userId.split(',')
+        .map(id => id.trim())
+        .filter(id => /^[a-zA-Z0-9_-]{1,100}$/.test(id));
+      
+      if (userIds.length > 0 && userIds.length <= 100) {
         const placeholders = userIds.map(() => '?').join(',');
         countQuery += ` WHERE user_id IN (${placeholders})`;
         countParams.push(...userIds);

@@ -18,6 +18,11 @@ class HttpClient {
    */
   async post(endpoint, data, options = {}) {
     const url = `${this.baseUrl}${endpoint}`;
+    const timeout = options.timeout || 30000;
+    
+    // 创建超时控制器
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeout);
     
     try {
       const response = await request(url, {
@@ -27,7 +32,10 @@ class HttpClient {
           ...options.headers,
         },
         body: JSON.stringify(data),
+        signal: controller.signal,
       });
+      
+      clearTimeout(timeoutId);
 
       const responseData = await response.body.json();
 
@@ -46,9 +54,16 @@ class HttpClient {
 
       return responseData;
     } catch (error) {
+      clearTimeout(timeoutId);
+      
       // 如果是业务错误，直接抛出
       if (error.code) {
         throw error;
+      }
+
+      // 超时错误
+      if (error.name === 'AbortError') {
+        throw new Error(`请求超时（${timeout}ms）`);
       }
 
       // 网络错误或其他错误
@@ -73,13 +88,22 @@ class HttpClient {
       }
     });
 
+    const timeout = options.timeout || 30000;
+    
+    // 创建超时控制器
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeout);
+    
     try {
       const response = await request(url.toString(), {
         method: 'GET',
         headers: {
           ...options.headers,
         },
+        signal: controller.signal,
       });
+      
+      clearTimeout(timeoutId);
 
       const responseData = await response.body.json();
 
@@ -98,9 +122,16 @@ class HttpClient {
 
       return responseData;
     } catch (error) {
+      clearTimeout(timeoutId);
+      
       // 如果是业务错误，直接抛出
       if (error.code) {
         throw error;
+      }
+
+      // 超时错误
+      if (error.name === 'AbortError') {
+        throw new Error(`请求超时（${timeout}ms）`);
       }
 
       // 网络错误或其他错误
