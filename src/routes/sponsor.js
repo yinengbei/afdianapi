@@ -30,7 +30,7 @@ async function sponsorRoutes(fastify, options) {
         perPage: per_page ? Math.min(parseInt(per_page, 10), 100) : 20,
       };
 
-      const result = sponsorModel.findMany(options);
+      const result = await sponsorModel.findMany(options);
 
       // 简化返回数据，只返回需要的字段
       const simplifiedList = result.list.map(sponsor => ({

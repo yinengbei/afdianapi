@@ -1,10 +1,4 @@
 import dotenv from 'dotenv';
-import { fileURLToPath } from 'url';
-import { dirname, join } from 'path';
-import { existsSync } from 'fs';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
 
 // 加载环境变量
 dotenv.config();
@@ -34,7 +28,14 @@ const config = {
 
   // 数据库配置
   database: {
-    path: process.env.DB_PATH || './data/afdian.db',
+    host: process.env.DB_HOST || 'localhost',
+    port: parseInt(process.env.DB_PORT || '3306', 10),
+    user: process.env.DB_USER || 'root',
+    password: process.env.DB_PASSWORD || '',
+    database: process.env.DB_NAME || 'afdian',
+    waitForConnections: true,
+    connectionLimit: 10,
+    queueLimit: 0,
   },
 
   // 定时任务配置
@@ -43,11 +44,7 @@ const config = {
   },
 };
 
-// 确保数据库目录存在
-const dbDir = dirname(config.database.path);
-if (!existsSync(dbDir)) {
-  // 数据库目录会在初始化时创建
-}
+// MySQL 数据库配置已通过环境变量设置
 
 export default config;
 

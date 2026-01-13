@@ -5,14 +5,14 @@
 ## 功能特性
 
 - ✅ **API代理**: 封装爱发电API调用，自动处理签名和请求
-- ✅ **定时同步**: 使用 node-cron 定时拉取赞助者数据并存储到 SQLite
+- ✅ **定时同步**: 使用 node-cron 定时拉取赞助者数据并存储到 MySQL
 - ✅ **数据汇聚**: 自动汇聚每个赞助者的累计金额（`all_sum_amount`）
 - ✅ **简化API**: 唯一入口 `/sponsor`，返回赞助者总数、页数、赞助时间、金额、昵称、头像
 - ✅ **高可用**: 使用 PM2 进程守护，支持自动重启和日志管理
 
 ## 前置要求
 
-本项目需要使用 **Node.js LTS 版本**（18.x 或 20.x），以确保 `better-sqlite3` 可以使用预编译的二进制文件，无需编译。
+本项目需要使用 **Node.js LTS 版本**（18.x 或 20.x）。
 
 ## 快速开始
 
@@ -40,8 +40,12 @@ AFDIAN_API_TOKEN=your_api_token_here
 PORT=3000
 HOST=0.0.0.0
 
-# 数据库配置
-DB_PATH=./data/afdian.db
+# MySQL数据库配置
+DB_HOST=localhost
+DB_PORT=3306
+DB_USER=root
+DB_PASSWORD=your_password
+DB_NAME=afdian
 
 # 定时任务配置（cron表达式，默认每5分钟）
 SYNC_CRON=*/5 * * * *
@@ -128,7 +132,7 @@ afdianapi/
 │   ├── services/
 │   │   └── afdianApi.js    # 爱发电API调用封装
 │   ├── db/
-│   │   ├── index.js        # SQLite数据库初始化
+│   │   ├── index.js        # MySQL数据库连接池初始化
 │   │   └── migrations.js   # 数据库迁移/表结构
 │   ├── models/
 │   │   ├── order.js        # 订单数据模型
@@ -138,7 +142,6 @@ afdianapi/
 │   │   └── sponsor.js      # 赞助者查询路由（唯一API入口）
 │   └── cron/
 │       └── syncOrders.js   # 定时同步订单任务
-├── data/                   # 数据库文件目录
 ├── logs/                   # 日志文件目录
 ├── .env.example            # 环境变量示例
 ├── package.json
@@ -159,7 +162,13 @@ Cron表达式示例：
 
 ## 数据库
 
-使用 SQLite 存储数据，数据库文件默认位于 `./data/afdian.db`。
+使用 MySQL 存储数据。首次运行时会自动创建所有表结构。
+
+### 前置要求
+
+1. 安装并运行 MySQL 服务器（5.7+ 或 8.0+）
+2. 创建数据库（数据库名由 `DB_NAME` 环境变量指定）
+3. 确保数据库用户有足够的权限（CREATE TABLE, INSERT, UPDATE, SELECT 等）
 
 ### 表结构
 
@@ -170,15 +179,18 @@ Cron表达式示例：
   - `all_sum_amount`: 累计赞助金额（已汇聚）
   - `create_time`: 首次赞助时间
   - `last_pay_time`: 最近一次赞助时间
+- `orders`: 订单表
+- `order_skus`: 订单SKU详情表
 - `sync_metadata`: 同步元数据表
 
 
 ## 注意事项
 
 1. **环境变量**: 必须配置 `AFDIAN_USER_ID` 和 `AFDIAN_API_TOKEN`，可在爱发电开发者后台获取
-2. **数据库目录**: 确保 `data` 目录有写入权限
-3. **日志目录**: PM2 会在 `logs` 目录生成日志文件
-4. **API限流**: 注意爱发电API的调用频率限制
+2. **MySQL配置**: 必须配置 MySQL 连接信息（`DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, `DB_NAME`）
+3. **数据库准备**: 确保 MySQL 数据库已创建（数据库名由 `DB_NAME` 环境变量指定），首次运行时会自动创建表结构
+4. **日志目录**: PM2 会在 `logs` 目录生成日志文件
+5. **API限流**: 注意爱发电API的调用频率限制
 
 ## 许可证
 

@@ -8,6 +8,7 @@ import sponsorRoutes from './routes/sponsor.js';
 
 // 创建Fastify实例
 const fastify = Fastify({
+  ignoreTrailingSlash: true, // 忽略尾部斜杠，/sponsor 和 /sponsor/ 都会匹配
   logger: {
     level: process.env.LOG_LEVEL || 'info',
     transport: process.env.NODE_ENV === 'development' ? {
@@ -27,7 +28,7 @@ fastify.register(sponsorRoutes);
 async function start() {
   try {
     // 初始化数据库
-    initDatabase();
+    await initDatabase();
 
     // 启动定时任务
     startSyncTask();
@@ -56,7 +57,7 @@ signals.forEach((signal) => {
     stopSyncTask();
 
     // 关闭数据库连接
-    closeDatabase();
+    await closeDatabase();
 
     // 关闭服务器
     await fastify.close();

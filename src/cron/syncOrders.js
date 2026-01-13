@@ -80,7 +80,7 @@ async function syncSponsors() {
                 last_pay_time: lastPayTime || null,
               };
               
-              sponsorModel.upsert(sponsorData);
+              await sponsorModel.upsert(sponsorData);
               pageSynced++;
             } catch (error) {
               console.error(`[定时任务] 处理赞助者时出错:`, error.message, {
@@ -119,7 +119,7 @@ async function syncSponsors() {
 
     // 更新最后同步时间
     const syncTime = generateTimestamp();
-    syncMetadataModel.updateLastSyncTime(syncTime);
+    await syncMetadataModel.updateLastSyncTime(syncTime);
 
     const duration = Date.now() - startTime;
     console.log(`[定时任务] 同步完成，共同步 ${totalSynced} 个赞助者，耗时 ${duration}ms`);
